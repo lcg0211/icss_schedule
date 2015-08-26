@@ -88,13 +88,12 @@ public class JDSendDeliveryInfoJob implements Job {
 			String city = String.valueOf(deliveryInfoMap.get("city"));
 			String county = String.valueOf(deliveryInfoMap.get("county"));
 			String town = String.valueOf(deliveryInfoMap.get("town"));
-			String provinceId = String.valueOf(deliveryInfoMap
-					.get("provinceId"));
-			String cityId = String.valueOf(deliveryInfoMap.get("cityId"));
-			String countyId = String.valueOf(deliveryInfoMap.get("countyId"));
-			String townId = String.valueOf(deliveryInfoMap.get("townId"));
-			String siteType = String.valueOf(deliveryInfoMap.get("siteType"));
-			String siteId = String.valueOf(deliveryInfoMap.get("siteId"));
+//			String provinceId = String.valueOf(deliveryInfoMap.get("provinceId"));
+//			String cityId = String.valueOf(deliveryInfoMap.get("cityId"));
+//			String countyId = String.valueOf(deliveryInfoMap.get("countyId"));
+//			String townId = String.valueOf(deliveryInfoMap.get("townId"));
+//			String siteType = String.valueOf(deliveryInfoMap.get("siteType"));
+//			String siteId = String.valueOf(deliveryInfoMap.get("siteId"));
 			String siteName = String.valueOf(deliveryInfoMap.get("siteName"));
 			String receiveTel = String.valueOf(deliveryInfoMap
 					.get("receiveTel"));

@@ -21,8 +21,8 @@ public class SchedMain {
 				"group1").build();
 		CronTrigger trigger1 = newTrigger()
 				.withIdentity("authTrigger1", "group1")
-				.withSchedule(cronSchedule("* * 0/5 * * ?"))
-				.forJob("expressJob1", "group1").build();
+				.withSchedule(cronSchedule("* 0/30 * * * ?"))
+				.forJob("authJob1", "group1").build();
 		JobDetail job2 = newJob(JDGetDeliveryNumJob.class).withIdentity("expressJob1",
 				"group1").build();
 		CronTrigger trigger2 = newTrigger()
