@@ -37,8 +37,7 @@ public class JDOAuthRefreshTokenJob implements Job {
 
 	@SuppressWarnings({ "resource" })
 	private void oAuthRefreshToken() {
-		WmsBusi bi = new WmsBusi();
-		Map<String, Object> authMap = bi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
 		if (authMap == null) {
 			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + new Date());
 			return;

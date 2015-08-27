@@ -35,8 +35,7 @@ public class JDGetDeliveryNumJob implements Job {
 	}
 
 	private void getDeliveryNum() throws JdException {
-		WmsBusi bi = new WmsBusi();
-		Map<String, Object> authMap = bi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
 		if (authMap == null) {
 			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + new Date());
 			return;
@@ -48,7 +47,7 @@ public class JDGetDeliveryNumJob implements Job {
 		String appSecret = String.valueOf(authMap.get("appSecret"));
 		JdClient client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
 				appSecret);
-		List<Map<String, Object>> shopList = bi.getJDShop();
+		List<Map<String, Object>> shopList = WmsBusi.getJDShop();
 		if (shopList == null || shopList.size() == 0) {
 			log.error("------没有找到需要获取京东快递运单号的商家【getJDShop】------" + new Date());
 			return;
@@ -80,7 +79,7 @@ public class JDGetDeliveryNumJob implements Job {
 			log.info("------获取京东快递运单号成功，商家ID为【" + customerCode + "】------"
 					+ new Date());
 			log.info("---" + listDeliveryNum.toString() + "---");
-			retCount = bi.modifyJDShopGettime(customerCode);
+			retCount = WmsBusi.modifyJDShopGettime(customerCode);
 			if (retCount != 1) {
 				log.error("------数据库运行错误【modifyJDShopGettime】------"
 						+ new Date());
@@ -88,7 +87,7 @@ public class JDGetDeliveryNumJob implements Job {
 				log.info("------数据库运行成功【modifyJDShopGettime】------"
 						+ new Date());
 			}
-			retCount = bi.addDeliveryNum(expressId, customerCode,
+			retCount = WmsBusi.addDeliveryNum(expressId, customerCode,
 					listDeliveryNum);
 			if (retCount == 0) {
 				log.error("------数据库运行错误【addDeliveryNum】------" + new Date());
@@ -113,7 +112,6 @@ public class JDGetDeliveryNumJob implements Job {
 	// System.out.println(field + ":" + maps.get(field));
 	// }
 	// } catch (IOException e) {
-	// // TODO Auto-generated catch block
 	// e.printStackTrace();
 	// } finally {
 	// return sb.toString();

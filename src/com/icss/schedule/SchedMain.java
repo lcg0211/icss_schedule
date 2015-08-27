@@ -13,8 +13,6 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.icss.jdbc.JdbcUtils;
-
 public class SchedMain {
 	@SuppressWarnings("unused")
 	private static Logger log = LoggerFactory.getLogger(SchedMain.class);

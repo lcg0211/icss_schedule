@@ -11,10 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import com.icss.jdbc.JdbcUtils;
 
-public class WmsBusi {
+public final class WmsBusi {
 	private static Logger log = LoggerFactory.getLogger(WmsBusi.class);
 
-	public int addDeliveryNum(String customerId, String shopId,
+	public static int addDeliveryNum(String customerId, String shopId,
 			List<String> list) {
 		StringBuffer valueSql = new StringBuffer();
 		StringBuffer sql = new StringBuffer();
@@ -39,7 +39,7 @@ public class WmsBusi {
 		return retCount;
 	}
 
-	private List<String> getInitDevliveryInfo(String cusId, String deliveryNo,
+	private static List<String> getInitDevliveryInfo(String cusId, String deliveryNo,
 			String shopId) {
 		if (cusId == null || deliveryNo == null || shopId == null
 				|| "".equals(cusId) || "".equals(deliveryNo)
@@ -62,7 +62,7 @@ public class WmsBusi {
 		return initValue;
 	}
 
-	public Map<String, Object> getJDAuthInfo() {
+	public static Map<String, Object> getJDAuthInfo() {
 		String sql = "SELECT top 1 [app_key] as appKey,"
 				+ "[app_secret] as appSecret,"
 				+ "[access_token] as accessToken,"
@@ -71,7 +71,7 @@ public class WmsBusi {
 		return retMap;
 	}
 
-	public List<Map<String, Object>> getJDShop() {
+	public static List<Map<String, Object>> getJDShop() {
 		String sql = "select shop_id as shopId," + "pre_num as preNum "
 				+ "from TMP_JD_SHOP with(nolock) where get_delivery_num_flag=?";
 		Object[] obj = { "Y" };
@@ -79,7 +79,7 @@ public class WmsBusi {
 		return retList;
 	}
 
-	public int modifyJDShopGettime(String shopId) {
+	public static int modifyJDShopGettime(String shopId) {
 		if (shopId == null || "".equals(shopId)) {
 			log.error("参数不能为空！");
 			return 0;
@@ -92,13 +92,13 @@ public class WmsBusi {
 		return retCount;
 	}
 
-	public List<Map<String, Object>> getSendDeliveryInfo() {
+	public static List<Map<String, Object>> getSendDeliveryInfo() {
 		String sql = "select * from idx_jdexpress_getorder with(nolock)";
 		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql);
 		return retList;
 	}
 
-	public int modifyDeliveryPushtime(String expressId, String deliveryNum) {
+	public static int modifyDeliveryPushtime(String expressId, String deliveryNum) {
 		if (expressId == null || "".equals(expressId) || deliveryNum == null
 				|| "".equals(deliveryNum)) {
 			log.error("参数不能为空！");

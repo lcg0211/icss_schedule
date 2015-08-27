@@ -35,8 +35,7 @@ public class JDSendDeliveryInfoJob implements Job {
 	}
 
 	private void sendDeliveryInfo() throws JdException {
-		WmsBusi bi = new WmsBusi();
-		Map<String, Object> authMap = bi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
 		if (authMap == null) {
 			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + new Date());
 			return;
@@ -48,7 +47,7 @@ public class JDSendDeliveryInfoJob implements Job {
 		String appSecret = String.valueOf(authMap.get("appSecret"));
 		JdClient client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
 				appSecret);
-		List<Map<String, Object>> deliveryInfo = bi.getSendDeliveryInfo();
+		List<Map<String, Object>> deliveryInfo = WmsBusi.getSendDeliveryInfo();
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {
 			log.error("------没有找到京东快递需要提交的运单信息【getSendDeliveryInfo】------"
 					+ new Date());
@@ -213,7 +212,7 @@ public class JDSendDeliveryInfoJob implements Job {
 			}
 			log.info("------提交京东快递运单信息成功，运单号为【" + deliveryId + "】，SO订单号为【"
 					+ orderId + "】------" + new Date());
-			int retCount=bi.modifyDeliveryPushtime(expressId,ret.getDeliveryId());
+			int retCount=WmsBusi.modifyDeliveryPushtime(expressId,ret.getDeliveryId());
 			if (retCount != 1) {
 				log.error("------数据库运行错误【modifyDeliveryPushtime】------"
 						+ new Date());
