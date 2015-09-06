@@ -2,7 +2,6 @@ package com.icss.schedule;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +19,7 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.icss.common.CommonUtil;
 import com.icss.service.WmsBusi;
 
 @SuppressWarnings("deprecation")
@@ -29,9 +29,9 @@ public class JDOAuthRefreshTokenJob implements Job {
 
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
-		log.info("------开始刷新令牌------" + new Date());
+		log.info("------开始刷新令牌------" + CommonUtil.CurDate());
 		oAuthRefreshToken();
-		log.info("------刷新令牌完成------" + new Date());
+		log.info("------刷新令牌完成------" + CommonUtil.CurDate());
 
 	}
 
@@ -39,7 +39,7 @@ public class JDOAuthRefreshTokenJob implements Job {
 	private void oAuthRefreshToken() {
 		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + new Date());
+			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.CurDate());
 			return;
 		}
 		try {

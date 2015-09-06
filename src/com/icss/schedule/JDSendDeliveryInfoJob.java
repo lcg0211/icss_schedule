@@ -1,6 +1,5 @@
 package com.icss.schedule;
 
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +10,7 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.icss.common.CommonUtil;
 import com.icss.service.WmsBusi;
 import com.jd.open.api.sdk.DefaultJdClient;
 import com.jd.open.api.sdk.JdClient;
@@ -26,9 +26,9 @@ public class JDSendDeliveryInfoJob implements Job {
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
 		try {
-			log.info("------开始提交京东运单信息------" + new Date());
+			log.info("------开始提交京东运单信息------" + CommonUtil.CurDate());
 			sendDeliveryInfo();
-			log.info("------提交全部完成------" + new Date());
+			log.info("------提交全部完成------" + CommonUtil.CurDate());
 		} catch (JdException e) {
 			e.printStackTrace();
 		}
@@ -37,7 +37,7 @@ public class JDSendDeliveryInfoJob implements Job {
 	private void sendDeliveryInfo() throws JdException {
 		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + new Date());
+			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.CurDate());
 			return;
 		}
 		String SERVER_URL = "http://gw.api.jd.com/routerjson";
@@ -50,7 +50,7 @@ public class JDSendDeliveryInfoJob implements Job {
 		List<Map<String, Object>> deliveryInfo = WmsBusi.getSendDeliveryInfo();
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {
 			log.error("------没有找到京东快递需要提交的运单信息【getSendDeliveryInfo】------"
-					+ new Date());
+					+ CommonUtil.CurDate());
 			return;
 		}
 		Iterator<Map<String, Object>> iter = deliveryInfo.iterator();
@@ -200,25 +200,25 @@ public class JDSendDeliveryInfoJob implements Job {
 			if(Integer.parseInt(response.getCode())>0) {
 				log.error("---京东API平台调用错误，错误码为【"+response.getCode()+"】【"
 						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
-						+ new Date());
+						+ CommonUtil.CurDate());
 				return;
 			}
 			SendResultInfoDTO ret = response.getResultInfo();
 			if (!"100".equals(ret.getCode())) {
 				log.info("------提交京东快递运单信息失败【" + ret.getMessage() + "】，运单号为【"
 						+ deliveryId + "】，SO订单号为【" + orderId + "】------"
-						+ new Date());
+						+ CommonUtil.CurDate());
 				return;
 			}
 			log.info("------提交京东快递运单信息成功，运单号为【" + deliveryId + "】，SO订单号为【"
-					+ orderId + "】------" + new Date());
+					+ orderId + "】------" + CommonUtil.CurDate());
 			int retCount=WmsBusi.modifyDeliveryPushtime(expressId,ret.getDeliveryId());
 			if (retCount != 1) {
 				log.error("------数据库运行错误【modifyDeliveryPushtime】------"
-						+ new Date());
+						+ CommonUtil.CurDate());
 			} else {
 				log.info("------数据库运行成功【modifyDeliveryPushtime】------"
-						+ new Date());
+						+ CommonUtil.CurDate());
 			}
 		}
 	}

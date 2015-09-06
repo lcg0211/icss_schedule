@@ -76,6 +76,7 @@ public final class WmsBusi {
 				+ "from TMP_JD_SHOP with(nolock) where get_delivery_num_flag=?";
 		Object[] obj = { "Y" };
 		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql, obj);
+		log.info("京东店铺配置信息："+retList.toString());
 		return retList;
 	}
 
@@ -93,8 +94,68 @@ public final class WmsBusi {
 	}
 
 	public static List<Map<String, Object>> getSendDeliveryInfo() {
-		String sql = "select * from idx_jdexpress_getorder with(nolock)";
+//		String sql = "select * from idx_jdexpress_getorder with(nolock)";
+		String sql="SELECT [deliveryId]"
+      +",[salePlat]"
+      +",[customerCode]"
+      +",[orderId]"
+      +",[thrOrderId]"
+      +",[selfPrintWayBill]"
+      +",[pickMethod]"
+      +",[packageRequired]"
+      +",[senderName]"
+      +",[senderAddress]"
+      +",[senderTel]"
+      +",[senderMobile]"
+      +",[senderPostcode]"
+      +",[receiveName]"
+      +",[receiveAddress]"
+      +",[province]"
+      +",[city]"
+      +",[county]"
+      +",[town]"
+      +",[provinceId]"
+      +",[cityId]"
+      +",[countyId]"
+      +",[townId]"
+      +",[siteType]"
+      +",[siteId]"
+      +",[siteName]"
+      +",[receiveTel]"
+      +",[receiveMobile]"
+      +",[postcode]"
+      +",[packageCount]"
+      +",[weight]"
+      +",[vloumLong]"
+      +",[vloumWidth]"
+      +",[vloumHeight]"
+      +",[vloumn]"
+      +",[description]"
+      +",[collectionValue]"
+      +",[collectionMoney]"
+      +",[guaranteeValue]"
+      +",[guaranteeValueAmount]"
+      +",[signReturn]"
+      +",[aging]"
+      +",[transType]"
+      +",[remark]"
+      +",[goodsType]"
+      +",[orderType]"
+      +",[shopCode]"
+      +",[orderSendTime]"
+      +",[warehouseCode]"
+      +",[extendField1]"
+      +",[extendField2]"
+      +",[extendField3]"
+      +",[extendField4]"
+      +",[extendField5]"
+  +" FROM [idx_jdexpress_getorder]";
 		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql);
+		if (retList ==null ) {
+		log.info("运单信息数据库查询返回为空");
+		return null;
+		}
+		log.info("运单信息："+retList.toString());
 		return retList;
 	}
 

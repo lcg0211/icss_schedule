@@ -259,6 +259,7 @@ public final class JdbcUtils {
 				while (rs.next()) { // 循环取多行
 					Map<String, Object> data = new HashMap<String, Object>();
 					for (int i = 0; i < colNames.length; i++) {
+						System.out.println(String.valueOf(colNames[i]));
 						data.put(colNames[i], rs.getObject(colNames[i]));
 					}
 					datas.add(data);
