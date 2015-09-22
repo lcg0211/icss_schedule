@@ -11,46 +11,52 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.icss.common.CommonUtil;
-import com.icss.service.WmsBusi;
+import com.icss.service.WmsServ;
 import com.jd.open.api.sdk.DefaultJdClient;
 import com.jd.open.api.sdk.JdClient;
 import com.jd.open.api.sdk.JdException;
 import com.jd.open.api.sdk.domain.etms.OrderInfoJosService.SendResultInfoDTO;
+import com.jd.open.api.sdk.domain.order.OrderDetailInfo;
 import com.jd.open.api.sdk.request.etms.EtmsWaybillSendRequest;
+import com.jd.open.api.sdk.request.order.OrderGetRequest;
 import com.jd.open.api.sdk.response.etms.EtmsWaybillSendResponse;
+import com.jd.open.api.sdk.response.order.OrderGetResponse;
 
 public class JDSendDeliveryInfoJob implements Job {
+	private final static String EXPRESS_ID="JD";
 	private static Logger log = LoggerFactory
 			.getLogger(JDSendDeliveryInfoJob.class);
-
+	
+	/* (non-Javadoc)
+	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
+	 */
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
 		try {
-			log.info("------开始提交京东运单信息------" + CommonUtil.CurDate());
+			log.info("------开始提交京东运单信息------" + CommonUtil.curDate());
 			sendDeliveryInfo();
-			log.info("------提交全部完成------" + CommonUtil.CurDate());
+			log.info("------提交全部完成------" + CommonUtil.curDate());
 		} catch (JdException e) {
 			e.printStackTrace();
 		}
 	}
 
 	private void sendDeliveryInfo() throws JdException {
-		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsServ.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.CurDate());
+			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.curDate());
 			return;
 		}
 		String SERVER_URL = "http://gw.api.jd.com/routerjson";
-		String expressId = "JD";
 		String accessToken = String.valueOf(authMap.get("accessToken"));
 		String appKey = String.valueOf(authMap.get("appKey"));
 		String appSecret = String.valueOf(authMap.get("appSecret"));
 		JdClient client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
 				appSecret);
-		List<Map<String, Object>> deliveryInfo = WmsBusi.getSendDeliveryInfo();
+		List<Map<String, Object>> deliveryInfo = WmsServ.getSendDeliveryInfo(EXPRESS_ID);
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {
 			log.error("------没有找到京东快递需要提交的运单信息【getSendDeliveryInfo】------"
-					+ CommonUtil.CurDate());
+					+ CommonUtil.curDate());
 			return;
 		}
 		Iterator<Map<String, Object>> iter = deliveryInfo.iterator();
@@ -177,8 +183,32 @@ public class JDSendDeliveryInfoJob implements Job {
 			request.setVloumHeight(Double.parseDouble(vloumHeight));
 			request.setVloumn(Double.parseDouble(vloumn));
 			request.setDescription(description);
-			request.setCollectionValue(Integer.parseInt(collectionValue));
-			request.setCollectionMoney(Double.parseDouble(collectionMoney));
+			OrderGetRequest orderRequest=new OrderGetRequest();
+			orderRequest.setOrderId(thrOrderId);
+			orderRequest.setOptionalFields("pay_type,order_payment");
+			OrderGetResponse orderResponse=client.execute(orderRequest);
+			if(Integer.parseInt(orderResponse.getCode())>0) {
+				log.error("---京东API平台调用错误，错误码为【"+orderResponse.getCode()+"】【"
+						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
+						+ CommonUtil.curDate());
+				continue;
+			}
+			OrderDetailInfo odi=orderResponse.getOrderDetailInfo();
+			Double collectionMoneyd=0.00d;
+			int collectionValuei=1;
+			if (odi.getOrderInfo() == null) {
+				log.error("---获取京东订单信息【代收货款】信息失败，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---" + CommonUtil.curDate());
+				collectionMoneyd=Double.parseDouble(collectionMoney);
+				log.info("---置【货款金额】为：【"+collectionMoney+"】，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---"+ CommonUtil.curDate());
+			} else {
+				String orderPayment=odi.getOrderInfo().getOrderPayment();
+				String orderPaytype=odi.getOrderInfo().getPayType().split("-")[0];
+				collectionMoneyd=Double.parseDouble(orderPayment);
+				collectionValuei=Integer.parseInt(orderPaytype);
+				log.info("---获取京东订单代收货款信息成功，金额为：【"+collectionMoneyd+"】，订单类型：【"+orderPaytype+"】，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---" + CommonUtil.curDate());
+			}
+			request.setCollectionValue(collectionValuei);
+			request.setCollectionMoney(collectionMoneyd);
 			request.setGuaranteeValue(Integer.parseInt(guaranteeValue));
 			request.setGuaranteeValueAmount(Double
 					.parseDouble(guaranteeValueAmount));
@@ -200,25 +230,25 @@ public class JDSendDeliveryInfoJob implements Job {
 			if(Integer.parseInt(response.getCode())>0) {
 				log.error("---京东API平台调用错误，错误码为【"+response.getCode()+"】【"
 						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
-						+ CommonUtil.CurDate());
-				return;
+						+ CommonUtil.curDate());
+				continue;
 			}
 			SendResultInfoDTO ret = response.getResultInfo();
 			if (!"100".equals(ret.getCode())) {
-				log.info("------提交京东快递运单信息失败【" + ret.getMessage() + "】，运单号为【"
-						+ deliveryId + "】，SO订单号为【" + orderId + "】------"
-						+ CommonUtil.CurDate());
-				return;
+				log.info("---提交京东快递运单信息失败【" + ret.getMessage() + "】，运单号为【"
+						+ deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【" + orderId + "】---"
+						+ CommonUtil.curDate());
+				continue;
 			}
-			log.info("------提交京东快递运单信息成功，运单号为【" + deliveryId + "】，SO订单号为【"
-					+ orderId + "】------" + CommonUtil.CurDate());
-			int retCount=WmsBusi.modifyDeliveryPushtime(expressId,ret.getDeliveryId());
+			log.info("---提交京东快递运单信息成功，运单号为【" + deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【"
+					+ orderId + "】---" + CommonUtil.curDate());
+			int retCount=WmsServ.updateDeliveryPushtime(EXPRESS_ID,ret.getDeliveryId());
 			if (retCount != 1) {
-				log.error("------数据库运行错误【modifyDeliveryPushtime】------"
-						+ CommonUtil.CurDate());
+				log.error("---数据库运行错误【modifyDeliveryPushtime】---"
+						+ CommonUtil.curDate());
 			} else {
-				log.info("------数据库运行成功【modifyDeliveryPushtime】------"
-						+ CommonUtil.CurDate());
+				log.info("---数据库运行成功【modifyDeliveryPushtime】---"
+						+ CommonUtil.curDate());
 			}
 		}
 	}
