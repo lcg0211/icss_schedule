@@ -10,7 +10,7 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.icss.service.WmsBusi;
+import com.icss.service.WmsServ;
 import com.jd.open.api.sdk.DefaultJdClient;
 import com.jd.open.api.sdk.JdClient;
 import com.jd.open.api.sdk.JdException;
@@ -26,32 +26,33 @@ public class JDGetDeliveryNumJob implements Job {
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
 		try {
-			log.info("------开始获取京东物流预分配的运单号------" + CommonUtil.CurDate());
+			log.info("------开始获取京东物流预分配的运单号------" + CommonUtil.curDate());
 			getDeliveryNum();
-			log.info("------获取全部完成------" + CommonUtil.CurDate());
+			log.info("------获取全部完成------" + CommonUtil.curDate());
 		} catch (JdException e) {
 			e.printStackTrace();
 		}
 	}
 
 	private void getDeliveryNum() throws JdException {
-		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsServ.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.CurDate());
+			log.error("------没有找到京东的APP的证书信息【getJDAuthInfo】------"
+					+ CommonUtil.curDate());
 			return;
 		}
 		String SERVER_URL = "http://gw.api.jd.com/routerjson";
 		String expressId = "JD";
-		String accessToken = String.valueOf(authMap.get("accessToken"));
 		String appKey = String.valueOf(authMap.get("appKey"));
 		String appSecret = String.valueOf(authMap.get("appSecret"));
-		JdClient client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
-				appSecret);
-		List<Map<String, Object>> shopList = WmsBusi.getJDShop();
+		JdClient client = null;
+		EtmsWaybillcodeGetRequest request = null;
+		EtmsWaybillcodeGetResponse response = null;
+		GetResultInfoDTO ret = null;
+		List<Map<String, Object>> shopList = WmsServ.getJDShop();
 		if (shopList == null || shopList.size() == 0) {
-			log.error("------没有找到需要获取京东快递运单号的商家【getJDShop】------"+
-		CommonUtil.CurDate()
-					);
+			log.error("------没有找到需要获取京东快递运单号的商家【getJDShop】------"
+					+ CommonUtil.curDate());
 			return;
 		}
 		Iterator<Map<String, Object>> iter = shopList.iterator();
@@ -59,42 +60,62 @@ public class JDGetDeliveryNumJob implements Job {
 			Map<String, Object> shopMap = iter.next();
 			String preNum = String.valueOf(shopMap.get("preNum"));
 			String customerCode = String.valueOf(shopMap.get("shopId"));
-			EtmsWaybillcodeGetRequest request = new EtmsWaybillcodeGetRequest();
+			String accessToken = String.valueOf(shopMap.get("accessToken"));
+			int upLimit = Integer
+					.valueOf(String.valueOf(shopMap.get("upLimit")));
+			//得到京东店铺当前的可用面单号的数量
+			int availableDeliveryNumCount = WmsServ
+					.getJDAvailableDeliveryNumCount(customerCode);
+			if(availableDeliveryNumCount>=upLimit) {
+				log.info("------京东店铺当前的可用面单号数量已达到上限【当前："+availableDeliveryNumCount+" | 上限："+upLimit+"】，无需获取面单号，商家ID为【"
+						+ customerCode + "】------" + CommonUtil.curDate());
+				continue;
+			}
+			log.info("------京东店铺当前的可用面单号数量未达到上限【当前："+availableDeliveryNumCount+" | 上限："+upLimit+"】，需要获取面单号，商家ID为【"
+					+ customerCode + "】------" + CommonUtil.curDate());
+			request = new EtmsWaybillcodeGetRequest();
 			request.setPreNum(preNum);
 			request.setCustomerCode(customerCode);
-			EtmsWaybillcodeGetResponse response = client.execute(request);
-			if(Integer.parseInt(response.getCode())>0) {
-				log.error("---京东API平台调用错误，错误码为【"+response.getCode()+"】【"
-						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
-						+ CommonUtil.CurDate());
-				return;
+			client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
+					appSecret);
+			response = client.execute(request);
+			if (Integer.parseInt(response.getCode()) > 0) {
+				log.error("---京东API平台调用错误，错误码为【"
+						+ response.getCode()
+						+ "】【"
+						+ Thread.currentThread().getStackTrace()[1]
+								.getMethodName() + "】---"
+						+ CommonUtil.curDate());
+				continue;
 			}
-			GetResultInfoDTO ret = response.getResultInfo();
+			ret = response.getResultInfo();
 			List<String> listDeliveryNum = null;
 			int retCount = 0;
 			if (!"100".equals(ret.getCode())) {
-				log.info("------获取京东快递运单号失败【"+ret.getMessage()+"】，商家ID为【" + customerCode + "】------"
-						+ CommonUtil.CurDate());
-				return;
+				log.info("------获取京东快递运单号失败【" + ret.getMessage() + "】，商家ID为【"
+						+ customerCode + "】------" + CommonUtil.curDate());
+				continue;
 			}
 			listDeliveryNum = ret.getDeliveryIdList();
 			log.info("------获取京东快递运单号成功，商家ID为【" + customerCode + "】------"
-					+ CommonUtil.CurDate());
+					+ CommonUtil.curDate());
 			log.info("---" + listDeliveryNum.toString() + "---");
-			retCount = WmsBusi.modifyJDShopGettime(customerCode);
+			retCount = WmsServ.updateJDShopGettime(customerCode);
 			if (retCount != 1) {
 				log.error("------数据库运行错误【modifyJDShopGettime】------"
-						+ CommonUtil.CurDate());
+						+ CommonUtil.curDate());
 			} else {
 				log.info("------数据库运行成功【modifyJDShopGettime】------"
-						+ CommonUtil.CurDate());
+						+ CommonUtil.curDate());
 			}
-			retCount = WmsBusi.addDeliveryNum(expressId, customerCode,
+			retCount = WmsServ.addDeliveryNum(expressId, customerCode,
 					listDeliveryNum);
 			if (retCount == 0) {
-				log.error("------数据库运行错误【addDeliveryNum】------" + CommonUtil.CurDate());
+				log.error("------数据库运行错误【addDeliveryNum】------"
+						+ CommonUtil.curDate());
 			} else {
-				log.info("------数据库运行成功【addDeliveryNum】------" + CommonUtil.CurDate());
+				log.info("------数据库运行成功【addDeliveryNum】------"
+						+ CommonUtil.curDate());
 			}
 		}
 	}
