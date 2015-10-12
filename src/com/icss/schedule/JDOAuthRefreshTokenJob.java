@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.icss.common.CommonUtil;
-import com.icss.service.WmsBusi;
+import com.icss.service.WmsServ;
 
 @SuppressWarnings("deprecation")
 public class JDOAuthRefreshTokenJob implements Job {
@@ -29,17 +29,17 @@ public class JDOAuthRefreshTokenJob implements Job {
 
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
-		log.info("------开始刷新令牌------" + CommonUtil.CurDate());
+		log.info("------开始刷新令牌------" + CommonUtil.curDate());
 		oAuthRefreshToken();
-		log.info("------刷新令牌完成------" + CommonUtil.CurDate());
+		log.info("------刷新令牌完成------" + CommonUtil.curDate());
 
 	}
 
 	@SuppressWarnings({ "resource" })
 	private void oAuthRefreshToken() {
-		Map<String, Object> authMap = WmsBusi.getJDAuthInfo();
+		Map<String, Object> authMap = WmsServ.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.CurDate());
+			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.curDate());
 			return;
 		}
 		try {
