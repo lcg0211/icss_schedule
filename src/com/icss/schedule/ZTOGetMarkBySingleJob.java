@@ -51,56 +51,99 @@ public class ZTOGetMarkBySingleJob implements Job {
 					+ CommonUtil.curDate());
 			return;
 		}
+		String sendCity = String.valueOf(partnerMap.get("sendCity"));
+		String sendAddress = String.valueOf(partnerMap.get("sendAddress"));
 		String serverUrl = CommonUtil.getConfProperty(SERVER_URL);
 		List<Map<String, Object>> receiveInfo = WmsServ.getReceiveInfo();
+		if (receiveInfo == null || receiveInfo.size() == 0) {
+			log.error("---没有找到需要的中通收货信息【"
+					+ Thread.currentThread().getStackTrace()[1].getMethodName()
+					+ "】---" + CommonUtil.curDate());
+			return;
+		}
 		Iterator<Map<String, Object>> iter = receiveInfo.iterator();
+		HttpPost httpPost = null;
+		List<NameValuePair> params = null;
+		HttpResponse httpResponse = null;
 		while (iter.hasNext()) {
 			Map<String, Object> receiveInfoMap = iter.next();
 			Map<String, Object> receiveInfoSendMap = new HashMap<String, Object>();
-			receiveInfoSendMap.put("sendcity", "浙江省,宁波市,慈溪市");
+			receiveInfoSendMap.put("sendcity", sendCity);
+			receiveInfoSendMap.put("sendaddress", sendAddress);
 			String receivecityStr = String.valueOf(receiveInfoMap
 					.get("receivercity"));
+			String receiveraddressStr = String.valueOf(receiveInfoMap
+					.get("receiveraddress"));
+			// //增加判断最后一位【区县】是否为空字符串
+			// if(receivecityStr.endsWith(","))
+			// receivecityStr=receivecityStr.substring(0,
+			// receivecityStr.length()-1);
 			receiveInfoSendMap.put("receivercity", receivecityStr);
+			receiveInfoSendMap.put("receiveraddress", receiveraddressStr);
 			String content = DigestUtil.encryptBASE64(CommonUtil
 					.map2Json(receiveInfoSendMap));
 			String date = CommonUtil.curDate();
 			String partner = String.valueOf(partnerMap.get("partner"));
 			String pass = String.valueOf(partnerMap.get("pass"));
 			String verify = DigestUtil.digest(partner, date, content, pass);
-			HttpPost httpPost = new HttpPost(serverUrl);
-			List<NameValuePair> params = new ArrayList<NameValuePair>();
+			httpPost = new HttpPost(serverUrl);
+			params = new ArrayList<NameValuePair>();
 			params.add(new BasicNameValuePair("style", "json"));
 			params.add(new BasicNameValuePair("func", "order.marke"));
 			params.add(new BasicNameValuePair("partner", partner));
 			params.add(new BasicNameValuePair("datetime", date));
 			params.add(new BasicNameValuePair("content", content));
 			params.add(new BasicNameValuePair("verify", verify));
-			HttpResponse httpResponse = null;
 			httpPost.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 			try {
 				httpResponse = new DefaultHttpClient().execute(httpPost);
-				Map<String, Object> retMap = CommonUtil.json2Map(EntityUtils
-						.toString(httpResponse.getEntity()));
-				// String mailno =
-				// String.valueOf(deliveryInfoMap.get("mailno"));
+				String retStr = EntityUtils.toString(httpResponse.getEntity()); // 返回的大头笔
 				String sono = String.valueOf(receiveInfoMap.get("orderno")); // SO订单号
-				if ("false".equals(String.valueOf(retMap.get("result")))) {
-					log.info("------获取中通大头笔失败【"
-							+ String.valueOf(retMap.get("remark"))
-							+ "】，SO订单号为【" + sono + "】------"
+				boolean isRetSuccess = true;
+				Map<String, Object> retMap =null;
+				String mark=null; //最终要更新的大头笔
+				if (retStr == null || "".equals(retStr)) {
+					log.info("------获取中通大头笔失败，返回报文为null或空字符串，将以城市作为大头笔，收件人省市区为【"
+							+ receivecityStr + "】，SO订单号为【" + sono + "】------"
 							+ CommonUtil.curDate());
-					return;
+					isRetSuccess = false;
+				} else {
+					retMap = CommonUtil.json2Map(retStr);
+					if (retMap != null
+							&& "false".equals(String.valueOf(retMap
+									.get("result")))) {
+						log.info("------获取中通大头笔失败【"
+								+ String.valueOf(retMap.get("remark"))
+								+ "】，将以城市作为大头笔，收件人省市区为【" + receivecityStr
+								+ "】，SO订单号为【" + sono + "】------"
+								+ CommonUtil.curDate());
+						isRetSuccess = false;
+					}
 				}
-				log.info("------获取中通大头笔成功，SO订单号为【" + sono + "】------"
-						+ CommonUtil.curDate());
-				String mark = String.valueOf(retMap.get("marke")); // 得到的大头笔
-				int retCount = WmsServ.updateReceiveInfo(sono, receivecityStr,
-						mark);
+				if (isRetSuccess&&retMap.get("mark")!=null) {
+					mark=String.valueOf(retMap.get("mark"));
+					if (!"".equals(mark)) {
+					log.info("------获取中通大头笔成功【" +mark+ "】，收件人省市区为【"
+							+ receivecityStr + "】，SO订单号为【" + sono + "】------"
+							+ CommonUtil.curDate());
+					} else {
+						mark= receivecityStr.split(",")[1];// 将城市作为最终大头笔
+						log.info("------获取中通大头笔失败，返回的大头笔字段为【空字符串】，将以城市作为大头笔，收件人省市区为【"
+								+ receivecityStr + "】，SO订单号为【" + sono + "】------"
+								+ CommonUtil.curDate());
+					}
+				} else {
+					mark= receivecityStr.split(",")[1];// 将城市作为最终大头笔
+					log.info("------获取中通大头笔失败，返回的大头笔字段为【空对象】，将以城市作为大头笔，收件人省市区为【"
+							+ receivecityStr + "】，SO订单号为【" + sono + "】------"
+							+ CommonUtil.curDate());
+				}
+				int retCount = WmsServ.updateOrderMark(sono, mark);
 				if (retCount != 1) {
-					log.error("------数据库运行错误【updateReceiveInfo】------"
+					log.error("------数据库运行错误【updateOrderMark】------"
 							+ CommonUtil.curDate());
 				} else {
-					log.info("------数据库运行成功【updateReceiveInfo】------"
+					log.info("------数据库运行成功【updateOrderMark】------"
 							+ CommonUtil.curDate());
 				}
 			} catch (ClientProtocolException e) {
