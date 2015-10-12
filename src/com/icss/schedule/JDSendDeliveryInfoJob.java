@@ -44,15 +44,16 @@ public class JDSendDeliveryInfoJob implements Job {
 	private void sendDeliveryInfo() throws JdException {
 		Map<String, Object> authMap = WmsServ.getJDAuthInfo();
 		if (authMap == null) {
-			log.error("------没有找到京东的授权信息【getJDAuthInfo】------" + CommonUtil.curDate());
+			log.error("------没有找到京东的APP的证书信息【getJDAuthInfo】------" + CommonUtil.curDate());
 			return;
 		}
 		String SERVER_URL = "http://gw.api.jd.com/routerjson";
-		String accessToken = String.valueOf(authMap.get("accessToken"));
 		String appKey = String.valueOf(authMap.get("appKey"));
 		String appSecret = String.valueOf(authMap.get("appSecret"));
-		JdClient client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
-				appSecret);
+		JdClient client = null;
+		EtmsWaybillSendResponse response=null;
+		EtmsWaybillSendRequest request = null;
+		SendResultInfoDTO ret=null;
 		List<Map<String, Object>> deliveryInfo = WmsServ.getSendDeliveryInfo(EXPRESS_ID);
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {
 			log.error("------没有找到京东快递需要提交的运单信息【getSendDeliveryInfo】------"
@@ -146,7 +147,10 @@ public class JDSendDeliveryInfoJob implements Job {
 					.get("extendField4"));
 			String extendField5 = String.valueOf(deliveryInfoMap
 					.get("extendField5"));
-			EtmsWaybillSendRequest request = new EtmsWaybillSendRequest();
+			//add by lincg 20150930 增加店铺授权码
+			String accessToken=String.valueOf(deliveryInfoMap
+					.get("accessToken"));
+			request = new EtmsWaybillSendRequest();
 			request.setDeliveryId(deliveryId);
 			request.setSalePlat(salePlat);
 			request.setCustomerCode(customerCode);
@@ -183,32 +187,10 @@ public class JDSendDeliveryInfoJob implements Job {
 			request.setVloumHeight(Double.parseDouble(vloumHeight));
 			request.setVloumn(Double.parseDouble(vloumn));
 			request.setDescription(description);
-			OrderGetRequest orderRequest=new OrderGetRequest();
-			orderRequest.setOrderId(thrOrderId);
-			orderRequest.setOptionalFields("pay_type,order_payment");
-			OrderGetResponse orderResponse=client.execute(orderRequest);
-			if(Integer.parseInt(orderResponse.getCode())>0) {
-				log.error("---京东API平台调用错误，错误码为【"+orderResponse.getCode()+"】【"
-						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
-						+ CommonUtil.curDate());
-				continue;
-			}
-			OrderDetailInfo odi=orderResponse.getOrderDetailInfo();
-			Double collectionMoneyd=0.00d;
-			int collectionValuei=1;
-			if (odi.getOrderInfo() == null) {
-				log.error("---获取京东订单信息【代收货款】信息失败，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---" + CommonUtil.curDate());
-				collectionMoneyd=Double.parseDouble(collectionMoney);
-				log.info("---置【货款金额】为：【"+collectionMoney+"】，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---"+ CommonUtil.curDate());
-			} else {
-				String orderPayment=odi.getOrderInfo().getOrderPayment();
-				String orderPaytype=odi.getOrderInfo().getPayType().split("-")[0];
-				collectionMoneyd=Double.parseDouble(orderPayment);
-				collectionValuei=Integer.parseInt(orderPaytype);
-				log.info("---获取京东订单代收货款信息成功，金额为：【"+collectionMoneyd+"】，订单类型：【"+orderPaytype+"】，SO订单号为【" + orderId + "】，京东订单号为【" + thrOrderId + "】，运单号为【" + deliveryId + "】---" + CommonUtil.curDate());
-			}
-			request.setCollectionValue(collectionValuei);
-			request.setCollectionMoney(collectionMoneyd);
+			//只取前面的标记位
+			collectionValue=collectionValue.split("-")[0];
+			request.setCollectionValue(Integer.parseInt(collectionValue));
+			request.setCollectionMoney(Double.parseDouble(collectionMoney));
 			request.setGuaranteeValue(Integer.parseInt(guaranteeValue));
 			request.setGuaranteeValueAmount(Double
 					.parseDouble(guaranteeValueAmount));
@@ -226,21 +208,23 @@ public class JDSendDeliveryInfoJob implements Job {
 			request.setExtendField3(extendField3);
 			request.setExtendField4(Integer.parseInt(extendField4));
 			request.setExtendField5(Integer.parseInt(extendField5));
-			EtmsWaybillSendResponse response = client.execute(request);
+			client = new DefaultJdClient(SERVER_URL, accessToken, appKey,
+					appSecret);
+			response = client.execute(request);
 			if(Integer.parseInt(response.getCode())>0) {
 				log.error("---京东API平台调用错误，错误码为【"+response.getCode()+"】【"
 						+Thread.currentThread().getStackTrace()[1].getMethodName()+"】---"
 						+ CommonUtil.curDate());
 				continue;
 			}
-			SendResultInfoDTO ret = response.getResultInfo();
+			ret = response.getResultInfo();
 			if (!"100".equals(ret.getCode())) {
-				log.info("---提交京东快递运单信息失败【" + ret.getMessage() + "】，运单号为【"
+				log.info("---提交京东快递运单信息失败【" + ret.getMessage() + "】，商家编码为【"+customerCode+"】，运单号为【"
 						+ deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【" + orderId + "】---"
 						+ CommonUtil.curDate());
 				continue;
 			}
-			log.info("---提交京东快递运单信息成功，运单号为【" + deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【"
+			log.info("---提交京东快递运单信息成功，商家编码为【"+customerCode+"】，运单号为【" + deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【"
 					+ orderId + "】---" + CommonUtil.curDate());
 			int retCount=WmsServ.updateDeliveryPushtime(EXPRESS_ID,ret.getDeliveryId());
 			if (retCount != 1) {
