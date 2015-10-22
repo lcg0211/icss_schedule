@@ -188,7 +188,7 @@ public class JDSendDeliveryInfoJob implements Job {
 			request.setVloumn(Double.parseDouble(vloumn));
 			request.setDescription(description);
 			//只取前面的标记位
-			collectionValue=collectionValue.split("-")[0];
+			//collectionValue=collectionValue.split("-")[0];
 			request.setCollectionValue(Integer.parseInt(collectionValue));
 			request.setCollectionMoney(Double.parseDouble(collectionMoney));
 			request.setGuaranteeValue(Integer.parseInt(guaranteeValue));
