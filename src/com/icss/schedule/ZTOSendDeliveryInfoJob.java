@@ -53,17 +53,16 @@ public class ZTOSendDeliveryInfoJob implements Job {
 		log.info("------提交全部完成------" + CommonUtil.curDate());
 	}
 
-	@SuppressWarnings({ "resource", "unchecked" })
+	@SuppressWarnings({ "unchecked" })
 	private void sendDeliveryInfo() throws JsonGenerationException,
 			JsonMappingException, IOException, Exception {
 		Map<String, Object> partnerMap = WmsServ.getZTOPartnerInfo();
-		if (partnerMap == null) {
+		if (partnerMap == null || partnerMap.size()==0) {
 			log.error("------没有找到中通的合作方信息【getZTOPartnerInfo】------"
 					+ CommonUtil.curDate());
 			return;
 		}
 		String serverUrl = CommonUtil.getConfProperty(SERVER_URL);
-
 		List<Map<String, Object>> deliveryInfo = WmsServ
 				.getSendDeliveryInfo(EXPRESS_ID);
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {
@@ -72,25 +71,43 @@ public class ZTOSendDeliveryInfoJob implements Job {
 			return;
 		}
 		Iterator<Map<String, Object>> iter = deliveryInfo.iterator();
-		while (iter.hasNext()) { // 遍历Lis里面的每个Map
-			Map<String, Object> deliveryInfoMap = iter.next();
-			Set<String> set = deliveryInfoMap.keySet();
-			Iterator<String> it = set.iterator();
-			Map<String, Object> senderMap = new HashMap<String, Object>();
-			Map<String, Object> receiverMap = new HashMap<String, Object>();
+		Map<String, Object> deliveryInfoMap=null;
+		Set<String> set=null;
+		Iterator<String> it=null;
+		String content=null;
+		String contentJson=null;
+		String date=null;
+		String partner=null;
+		String pass=null;
+		String verify=null;
+		HttpPost httpPost=null;
+		List<NameValuePair> params=null;
+		HttpResponse httpResponse = null;
+		Map<String, Object> retMap=null;
+		String mailno =null;
+		String sono=null;
+		int retCount=0;
+		String key=null;
+		String newKey=null;
+		Map<String, Object> senderMap = new HashMap<String, Object>();
+		Map<String, Object> receiverMap = new HashMap<String, Object>();
+		while (iter.hasNext()) { // 遍历List里面的每个Map
+			deliveryInfoMap = iter.next();
+			set = deliveryInfoMap.keySet();
+			it = set.iterator();
 			// 重构Map，将sender与receive独立成Map
 			while (it.hasNext()) { // 遍历Map里面的Key
-				String key = it.next();
+				key = it.next();
 				if (key.startsWith("sender")) {
-					String newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
-					System.out.println(newKey);
+					newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
+					senderMap.clear();
 					senderMap.put(newKey,
 							String.valueOf(deliveryInfoMap.get(key)));
 					it.remove();
 				}
 				if (key.startsWith("receiver")) {
-					String newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
-					System.out.println(newKey);
+					newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
+					senderMap.clear();
 					receiverMap.put(newKey,
 							String.valueOf(deliveryInfoMap.get(key)));
 					it.remove();
@@ -98,38 +115,39 @@ public class ZTOSendDeliveryInfoJob implements Job {
 			}
 			deliveryInfoMap.put("sender", senderMap);
 			deliveryInfoMap.put("receiver", receiverMap);
-			String content = DigestUtil.encryptBASE64(CommonUtil
-					.map2Json(deliveryInfoMap));
-			String date = CommonUtil.curDate();
-			String partner = String.valueOf(partnerMap.get("partner"));
-			String pass = String.valueOf(partnerMap.get("pass"));
-			String verify = DigestUtil.digest(partner, date, content, pass);
-			HttpPost httpPost = new HttpPost(serverUrl);
-			List<NameValuePair> params = new ArrayList<NameValuePair>();
+			contentJson=CommonUtil.map2Json(deliveryInfoMap);
+			content = DigestUtil.encryptBASE64(contentJson);
+			date = CommonUtil.curDate();
+			partner = String.valueOf(partnerMap.get("partner"));
+			pass = String.valueOf(partnerMap.get("pass"));
+			verify = DigestUtil.digest(partner, date, content, pass);
+			httpPost = new HttpPost(serverUrl);
+			params = new ArrayList<NameValuePair>();
 			params.add(new BasicNameValuePair("style", "json"));
 			params.add(new BasicNameValuePair("func", "order.submit"));
 			params.add(new BasicNameValuePair("partner", partner));
 			params.add(new BasicNameValuePair("datetime", date));
 			params.add(new BasicNameValuePair("content", content));
 			params.add(new BasicNameValuePair("verify", verify));
-			HttpResponse httpResponse = null;
 			httpPost.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 			try {
 				httpResponse = new DefaultHttpClient().execute(httpPost);
-				Map<String, Object> retMap = CommonUtil.json2Map(EntityUtils
+				retMap = CommonUtil.json2Map(EntityUtils
 						.toString(httpResponse.getEntity()));
-				String mailno = String.valueOf(deliveryInfoMap.get("mailno"));
-				String sono = String.valueOf(deliveryInfoMap.get("id"));
+				mailno = String.valueOf(deliveryInfoMap.get("mailno"));
+				sono = String.valueOf(deliveryInfoMap.get("id"));
+				log.info("------中通快递运单信息为【"+contentJson+"】，运单号为【" + mailno + "】，SO订单号为【"
+						+ sono + "】------" + CommonUtil.curDate());
 				if ("false".equals(String.valueOf(retMap.get("result")))) {
 					log.info("------提交中通快递运单信息失败【"
 							+ String.valueOf(retMap.get("remark")) + "】，运单号为【"
 							+ mailno + "】，SO订单号为【" + sono + "】------"
 							+ CommonUtil.curDate());
-					return;
+					continue;
 				}
 				log.info("------提交中通快递运单信息成功，运单号为【" + mailno + "】，SO订单号为【"
 						+ sono + "】------" + CommonUtil.curDate());
-				int retCount = WmsServ.updateDeliveryPushtime(EXPRESS_ID,
+				retCount = WmsServ.updateDeliveryPushtime(EXPRESS_ID,
 						mailno);
 				if (retCount != 1) {
 					log.error("------数据库运行错误【modifyDeliveryPushtime】------"
