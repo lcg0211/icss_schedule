@@ -104,6 +104,7 @@ public class JDGetDeliveryNumJob implements Job {
 			if (retCount != 1) {
 				log.error("------数据库运行错误【modifyJDShopGettime】------"
 						+ CommonUtil.curDate());
+				continue;
 			} else {
 				log.info("------数据库运行成功【modifyJDShopGettime】------"
 						+ CommonUtil.curDate());
@@ -113,6 +114,7 @@ public class JDGetDeliveryNumJob implements Job {
 			if (retCount == 0) {
 				log.error("------数据库运行错误【addDeliveryNum】------"
 						+ CommonUtil.curDate());
+				continue;
 			} else {
 				log.info("------数据库运行成功【addDeliveryNum】------"
 						+ CommonUtil.curDate());
