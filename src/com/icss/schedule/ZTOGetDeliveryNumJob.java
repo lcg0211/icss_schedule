@@ -55,7 +55,7 @@ public class ZTOGetDeliveryNumJob implements Job {
 	private void getDeliveryNum() throws JsonGenerationException,
 			JsonMappingException, IOException, Exception {
 		Map<String, Object> partnerMap = WmsServ.getZTOPartnerInfo();
-		if (partnerMap == null) {
+		if (partnerMap == null || partnerMap.size()==0) {
 			log.error("------没有找到中通的合作方信息【getZTOPartnerInfo】------"
 					+ CommonUtil.curDate());
 			return;
