@@ -16,11 +16,8 @@ import com.jd.open.api.sdk.DefaultJdClient;
 import com.jd.open.api.sdk.JdClient;
 import com.jd.open.api.sdk.JdException;
 import com.jd.open.api.sdk.domain.etms.OrderInfoJosService.SendResultInfoDTO;
-import com.jd.open.api.sdk.domain.order.OrderDetailInfo;
 import com.jd.open.api.sdk.request.etms.EtmsWaybillSendRequest;
-import com.jd.open.api.sdk.request.order.OrderGetRequest;
 import com.jd.open.api.sdk.response.etms.EtmsWaybillSendResponse;
-import com.jd.open.api.sdk.response.order.OrderGetResponse;
 
 public class JDSendDeliveryInfoJob implements Job {
 	private final static String EXPRESS_ID="JD";
