@@ -259,7 +259,7 @@ public final class JdbcUtils {
 				while (rs.next()) { // 循环取多行
 					Map<String, Object> data = new HashMap<String, Object>();
 					for (int i = 0; i < colNames.length; i++) {
-						System.out.println(String.valueOf(colNames[i]));
+//						System.out.println(String.valueOf(colNames[i]));
 						data.put(colNames[i], rs.getObject(colNames[i]));
 					}
 					datas.add(data);
@@ -271,6 +271,32 @@ public final class JdbcUtils {
 				return datas;
 			}
 		}
+		
+		// 批量查询
+				@SuppressWarnings("finally")
+				public static List<String> queryBatch(String sql) {
+					if (sql.trim() == "")
+						return null;
+					Connection conn = null;
+					PreparedStatement ps = null;
+					Statement st=null;
+					ResultSet rs = null;
+					List<String> datas = null;
+					try {
+						conn = JdbcUtils.getConnection();
+						st=conn.createStatement();
+						rs=st.executeQuery(sql);
+						datas = new ArrayList<String>();
+						while (rs.next()) { // 循环取多行
+							datas.add(String.valueOf(rs.getObject(1)));
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+					} finally {
+						JdbcUtils.free(rs, ps, conn);
+						return datas;
+					}
+				}
 
 	// 单个查询
 	@SuppressWarnings("finally")
