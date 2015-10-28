@@ -29,6 +29,7 @@ import com.icss.service.WmsServ;
 @SuppressWarnings("deprecation")
 public class ZTOGetMarkBySingleJob implements Job {
 	private final static String SERVER_URL = "ZTOServerUrl";
+	private static final String QCONF_PATH="/../config/qconf.properties";//路径为 WEB-INF/config/qconf.properties
 	private static Logger log = LoggerFactory
 			.getLogger(ZTOSendDeliveryInfoJob.class);
 
@@ -53,7 +54,7 @@ public class ZTOGetMarkBySingleJob implements Job {
 		}
 		String sendCity = String.valueOf(partnerMap.get("sendCity"));
 		String sendAddress = String.valueOf(partnerMap.get("sendAddress"));
-		String serverUrl = CommonUtil.getConfProperty(SERVER_URL);
+		String serverUrl = CommonUtil.getConfProperty(SERVER_URL,QCONF_PATH);
 		List<Map<String, Object>> receiveInfo = WmsServ.getReceiveInfo();
 		if (receiveInfo == null || receiveInfo.size() == 0) {
 			log.error("---没有找到需要的中通收货信息【"

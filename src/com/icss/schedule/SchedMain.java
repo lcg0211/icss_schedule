@@ -46,43 +46,44 @@ public class SchedMain {
 	private static final String JOB7_Delay ="ZTOGetDeliveryNumJobDelay";
 	private static Logger log = LoggerFactory.getLogger(SchedMain.class);
 	private static Scheduler sched;
-
+	private static final String QCONF_PATH="/../config/qconf.properties";//路径为 WEB-INF/config/qconf.properties
+	
 	public static void run() throws Exception {
-		String jobFlag1 = CommonUtil.getConfProperty(JOB1_ACTIVREFLAG);
-		String jobFlag2 = CommonUtil.getConfProperty(JOB2_ACTIVREFLAG);
-		String jobFlag3 = CommonUtil.getConfProperty(JOB3_ACTIVREFLAG);
-		String jobFlag4 = CommonUtil.getConfProperty(JOB4_ACTIVREFLAG);
-		String jobFlag5 = CommonUtil.getConfProperty(JOB5_ACTIVREFLAG);
-		String jobFlag6 = CommonUtil.getConfProperty(JOB6_ACTIVREFLAG);
-		String jobFlag7 = CommonUtil.getConfProperty(JOB7_ACTIVREFLAG);
+		String jobFlag1 = CommonUtil.getConfProperty(JOB1_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag2 = CommonUtil.getConfProperty(JOB2_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag3 = CommonUtil.getConfProperty(JOB3_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag4 = CommonUtil.getConfProperty(JOB4_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag5 = CommonUtil.getConfProperty(JOB5_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag6 = CommonUtil.getConfProperty(JOB6_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag7 = CommonUtil.getConfProperty(JOB7_ACTIVREFLAG,QCONF_PATH);
 		int jobDelay1 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB1_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB1_Delay,QCONF_PATH));
 		int jobDelay2 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB2_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB2_Delay,QCONF_PATH));
 		int jobDelay3 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB3_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB3_Delay,QCONF_PATH));
 		int jobDelay4 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB4_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB4_Delay,QCONF_PATH));
 		int jobDelay5 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB5_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB5_Delay,QCONF_PATH));
 		int jobDelay6 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB6_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB6_Delay,QCONF_PATH));
 		int jobDelay7 = Integer
-				.parseInt(CommonUtil.getConfProperty(JOB7_Delay));
+				.parseInt(CommonUtil.getConfProperty(JOB7_Delay,QCONF_PATH));
 		int jobInterval1 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB1_INTERVAL));
+				.getConfProperty(JOB1_INTERVAL,QCONF_PATH));
 		int jobInterval2 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB2_INTERVAL));
+				.getConfProperty(JOB2_INTERVAL,QCONF_PATH));
 		int jobInterval3 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB3_INTERVAL));
+				.getConfProperty(JOB3_INTERVAL,QCONF_PATH));
 		int jobInterval4 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB4_INTERVAL));
+				.getConfProperty(JOB4_INTERVAL,QCONF_PATH));
 		int jobInterval5 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB5_INTERVAL));
+				.getConfProperty(JOB5_INTERVAL,QCONF_PATH));
 		int jobInterval6 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB6_INTERVAL));
+				.getConfProperty(JOB6_INTERVAL,QCONF_PATH));
 		int jobInterval7 = Integer.parseInt(CommonUtil
-				.getConfProperty(JOB7_INTERVAL));
+				.getConfProperty(JOB7_INTERVAL,QCONF_PATH));
 		JobDetail job1 = null;
 		JobDetail job2 = null;
 		JobDetail job3 = null;

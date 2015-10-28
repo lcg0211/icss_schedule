@@ -33,6 +33,7 @@ import com.icss.service.WmsServ;
 public class ZTOSendDeliveryInfoJob implements Job {
 	private final static String EXPRESS_ID = "ZTO";
 	private final static String SERVER_URL = "ZTOServerUrl";
+	private static final String QCONF_PATH="/../config/qconf.properties";//路径为 WEB-INF/config/qconf.properties
 	private static Logger log = LoggerFactory
 			.getLogger(ZTOSendDeliveryInfoJob.class);
 
@@ -62,7 +63,7 @@ public class ZTOSendDeliveryInfoJob implements Job {
 					+ CommonUtil.curDate());
 			return;
 		}
-		String serverUrl = CommonUtil.getConfProperty(SERVER_URL);
+		String serverUrl = CommonUtil.getConfProperty(SERVER_URL,QCONF_PATH);
 		List<Map<String, Object>> deliveryInfo = WmsServ
 				.getSendDeliveryInfo(EXPRESS_ID);
 		if (deliveryInfo == null || deliveryInfo.size() == 0) {

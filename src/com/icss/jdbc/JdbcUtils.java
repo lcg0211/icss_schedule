@@ -1,6 +1,5 @@
 package com.icss.jdbc;
 
-import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
@@ -15,32 +14,38 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-
+import com.icss.common.CommonUtil;
 import com.icss.jdbc.datasource.MyDataSource;
 
 public final class JdbcUtils {
 	private static MyDataSource myDataSource = null;
+	private static final String JDBC_CONF_PATH = "/../config/jdbc.properties";// 路径为
+																				// WEB-INF/config/jdbc.properties
 
 	private JdbcUtils() {
 	}
 
 	static {
 		try {
-			Properties pt = new Properties();
-			pt.load(JdbcUtils.class.getResourceAsStream("/../config/jdbc.properties")); //路径为 WEB-INF/config/jdbc.properties
-			String classname = pt.getProperty("jdbc.driverClassName");
-			String dbUrl = pt.getProperty("jdbc.url");
-			String dbUser = pt.getProperty("jdbc.username");
-			String dbPasswd = pt.getProperty("jdbc.password");
-			System.out.println("【"+classname+"】【"+dbUrl+"】【"+dbUser+"】");
+			String classname = CommonUtil.getConfProperty(
+					"jdbc.driverClassName", JDBC_CONF_PATH);
+			String dbUrl = CommonUtil.getConfProperty("jdbc.url",
+					JDBC_CONF_PATH);
+			String dbUser = CommonUtil.getConfProperty("jdbc.username",
+					JDBC_CONF_PATH);
+			String dbPasswd = CommonUtil.getConfProperty("jdbc.password",
+					JDBC_CONF_PATH);
+			int initCount = Integer.parseInt(CommonUtil.getConfProperty(
+					"jdbc.initCount", JDBC_CONF_PATH));
+			int maxCount = Integer.parseInt(CommonUtil.getConfProperty(
+					"jdbc.maxCount", JDBC_CONF_PATH));
+			System.out.println("【" + classname + "】【" + dbUrl + "】【" + dbUser
+					+ "】【" + initCount + "】【" + maxCount + "】");
 			Class.forName(classname);
-			myDataSource = new MyDataSource(dbUrl, dbUser, dbPasswd);
+			myDataSource = new MyDataSource(dbUrl, dbUser, dbPasswd, initCount,
+					maxCount);
 		} catch (ClassNotFoundException e) {
 			throw new ExceptionInInitializerError(e);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 
@@ -227,76 +232,76 @@ public final class JdbcUtils {
 			return datas;
 		}
 	}
-	
+
 	// 批量查询
-		@SuppressWarnings("finally")
-		public static List<Map<String, Object>> queryPlural(String sql) {
-			if (sql.trim() == "")
-				return null;
-			Connection conn = null;
-			PreparedStatement ps = null;
-			Statement st=null;
-			ResultSet rs = null;
-//			Object obj = null;
-			List<Map<String, Object>> datas = null;
-			try {
-				conn = JdbcUtils.getConnection();
-				st=conn.createStatement();
-//				ps = conn.prepareStatement(sql);
-//				for (int i = 1; i <= params.length; i++) {
-//					obj = params[i - 1];
-//					ps.setObject(i, obj);
-//				}
-//				rs = ps.executeQuery();
-				rs=st.executeQuery(sql);
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int count = rsmd.getColumnCount();
-				String[] colNames = new String[count];
-				for (int i = 1; i <= count; i++) {
-					colNames[i - 1] = rsmd.getColumnLabel(i);
-				}
-				datas = new ArrayList<Map<String, Object>>();
-				while (rs.next()) { // 循环取多行
-					Map<String, Object> data = new HashMap<String, Object>();
-					for (int i = 0; i < colNames.length; i++) {
-//						System.out.println(String.valueOf(colNames[i]));
-						data.put(colNames[i], rs.getObject(colNames[i]));
-					}
-					datas.add(data);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			} finally {
-				JdbcUtils.free(rs, ps, conn);
-				return datas;
+	@SuppressWarnings("finally")
+	public static List<Map<String, Object>> queryPlural(String sql) {
+		if (sql.trim() == "")
+			return null;
+		Connection conn = null;
+		PreparedStatement ps = null;
+		Statement st = null;
+		ResultSet rs = null;
+		// Object obj = null;
+		List<Map<String, Object>> datas = null;
+		try {
+			conn = JdbcUtils.getConnection();
+			st = conn.createStatement();
+			// ps = conn.prepareStatement(sql);
+			// for (int i = 1; i <= params.length; i++) {
+			// obj = params[i - 1];
+			// ps.setObject(i, obj);
+			// }
+			// rs = ps.executeQuery();
+			rs = st.executeQuery(sql);
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int count = rsmd.getColumnCount();
+			String[] colNames = new String[count];
+			for (int i = 1; i <= count; i++) {
+				colNames[i - 1] = rsmd.getColumnLabel(i);
 			}
-		}
-		
-		// 批量查询
-				@SuppressWarnings("finally")
-				public static List<String> queryBatch(String sql) {
-					if (sql.trim() == "")
-						return null;
-					Connection conn = null;
-					PreparedStatement ps = null;
-					Statement st=null;
-					ResultSet rs = null;
-					List<String> datas = null;
-					try {
-						conn = JdbcUtils.getConnection();
-						st=conn.createStatement();
-						rs=st.executeQuery(sql);
-						datas = new ArrayList<String>();
-						while (rs.next()) { // 循环取多行
-							datas.add(String.valueOf(rs.getObject(1)));
-						}
-					} catch (SQLException e) {
-						e.printStackTrace();
-					} finally {
-						JdbcUtils.free(rs, ps, conn);
-						return datas;
-					}
+			datas = new ArrayList<Map<String, Object>>();
+			while (rs.next()) { // 循环取多行
+				Map<String, Object> data = new HashMap<String, Object>();
+				for (int i = 0; i < colNames.length; i++) {
+					// System.out.println(String.valueOf(colNames[i]));
+					data.put(colNames[i], rs.getObject(colNames[i]));
 				}
+				datas.add(data);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtils.free(rs, ps, conn);
+			return datas;
+		}
+	}
+
+	// 批量查询
+	@SuppressWarnings("finally")
+	public static List<String> queryBatch(String sql) {
+		if (sql.trim() == "")
+			return null;
+		Connection conn = null;
+		PreparedStatement ps = null;
+		Statement st = null;
+		ResultSet rs = null;
+		List<String> datas = null;
+		try {
+			conn = JdbcUtils.getConnection();
+			st = conn.createStatement();
+			rs = st.executeQuery(sql);
+			datas = new ArrayList<String>();
+			while (rs.next()) { // 循环取多行
+				datas.add(String.valueOf(rs.getObject(1)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtils.free(rs, ps, conn);
+			return datas;
+		}
+	}
 
 	// 单个查询
 	@SuppressWarnings("finally")
@@ -334,45 +339,45 @@ public final class JdbcUtils {
 			return data;
 		}
 	}
-	
+
 	// 单个查询
-		@SuppressWarnings("finally")
-		public static Map<String, Object> querySingular(String sql) {
-			if (sql.trim() == "")
-				return null;
-			Connection conn = null;
-			Statement st=null;
-			PreparedStatement ps = null;
-			ResultSet rs = null;
-			Map<String, Object> data = new HashMap<String, Object>();
-			try {
-				conn = JdbcUtils.getConnection();
-//				ps = conn.prepareStatement(sql);
-				st=conn.createStatement();
-				rs=st.executeQuery(sql);
-//				for (int i = 1; i <= params.length; i++) {
-//					obj = params[i - 1];
-//					ps.setObject(i, obj);
-//				}
-//				rs = ps.executeQuery();
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int count = rsmd.getColumnCount();
-				String[] colNames = new String[count];
-				for (int i = 1; i <= count; i++) {
-					colNames[i - 1] = rsmd.getColumnLabel(i);
-				}
-				if (rs.next()) { // 只取第一行
-					for (int i = 0; i < colNames.length; i++) {
-						data.put(colNames[i], rs.getObject(colNames[i]));
-					}
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			} finally {
-				JdbcUtils.free(rs, ps, conn);
-				return data;
+	@SuppressWarnings("finally")
+	public static Map<String, Object> querySingular(String sql) {
+		if (sql.trim() == "")
+			return null;
+		Connection conn = null;
+		Statement st = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		Map<String, Object> data = new HashMap<String, Object>();
+		try {
+			conn = JdbcUtils.getConnection();
+			// ps = conn.prepareStatement(sql);
+			st = conn.createStatement();
+			rs = st.executeQuery(sql);
+			// for (int i = 1; i <= params.length; i++) {
+			// obj = params[i - 1];
+			// ps.setObject(i, obj);
+			// }
+			// rs = ps.executeQuery();
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int count = rsmd.getColumnCount();
+			String[] colNames = new String[count];
+			for (int i = 1; i <= count; i++) {
+				colNames[i - 1] = rsmd.getColumnLabel(i);
 			}
+			if (rs.next()) { // 只取第一行
+				for (int i = 0; i < colNames.length; i++) {
+					data.put(colNames[i], rs.getObject(colNames[i]));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			JdbcUtils.free(rs, ps, conn);
+			return data;
 		}
+	}
 
 	// 调用SP
 	@SuppressWarnings("finally")

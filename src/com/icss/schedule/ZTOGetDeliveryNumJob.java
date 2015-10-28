@@ -31,6 +31,7 @@ import com.icss.service.WmsServ;
 public class ZTOGetDeliveryNumJob implements Job {
 	private final static String EXPRESS_ID = "ZTO";
 	private final static String SERVER_URL = "ZTOServerUrl";
+	private static final String QCONF_PATH="/../config/qconf.properties";//路径为 WEB-INF/config/qconf.properties
 	private static Logger log = LoggerFactory
 			.getLogger(ZTOGetDeliveryNumJob.class);
 
@@ -60,7 +61,7 @@ public class ZTOGetDeliveryNumJob implements Job {
 					+ CommonUtil.curDate());
 			return;
 		}
-		String serverUrl = CommonUtil.getConfProperty(SERVER_URL);
+		String serverUrl = CommonUtil.getConfProperty(SERVER_URL,QCONF_PATH);
 		Map<String, Object> mailApplyMap = new HashMap<String, Object>();
 		int number = Integer.parseInt(String.valueOf(partnerMap.get("number")));
 		int upLimit=Integer.parseInt(String.valueOf(partnerMap.get("upLimit")));
