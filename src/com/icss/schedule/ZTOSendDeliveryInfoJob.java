@@ -93,6 +93,8 @@ public class ZTOSendDeliveryInfoJob implements Job {
 		Map<String, Object> senderMap = new HashMap<String, Object>();
 		Map<String, Object> receiverMap = new HashMap<String, Object>();
 		while (iter.hasNext()) { // 遍历List里面的每个Map
+			senderMap.clear();
+			receiverMap.clear();
 			deliveryInfoMap = iter.next();
 			set = deliveryInfoMap.keySet();
 			it = set.iterator();
@@ -101,14 +103,12 @@ public class ZTOSendDeliveryInfoJob implements Job {
 				key = it.next();
 				if (key.startsWith("sender")) {
 					newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
-					senderMap.clear();
 					senderMap.put(newKey,
 							String.valueOf(deliveryInfoMap.get(key)));
 					it.remove();
 				}
 				if (key.startsWith("receiver")) {
 					newKey = key.split("_")[1]; // 取出 "_" 后面的字段作为新的key
-					senderMap.clear();
 					receiverMap.put(newKey,
 							String.valueOf(deliveryInfoMap.get(key)));
 					it.remove();
