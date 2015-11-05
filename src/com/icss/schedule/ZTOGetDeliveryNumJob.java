@@ -102,7 +102,7 @@ public class ZTOGetDeliveryNumJob implements Job {
 				return;
 			}
 			List<Long> retMailNo = (List<Long>) retMap.get("list");
-			Long lastNo = retMailNo.get(number-1);
+			Long lastNo = retMailNo.get(retMailNo.size()-1);
 			log.info("------获取中通运单号成功，运单号为【" + retMailNo.toString()
 					+ "】，最后一个运单号码为【" + lastNo.toString() + "】------"
 					+ CommonUtil.curDate());
