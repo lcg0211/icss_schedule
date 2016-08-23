@@ -44,7 +44,7 @@ public class JDSendDeliveryInfoJob implements Job {
 			log.error("------没有找到京东的APP的证书信息【getJDAuthInfo】------" + CommonUtil.curDate());
 			return;
 		}
-		String SERVER_URL = "http://gw.api.jd.com/routerjson";
+		String SERVER_URL = "http://api.jd.com/routerjson";
 		String appKey = String.valueOf(authMap.get("appKey"));
 		String appSecret = String.valueOf(authMap.get("appSecret"));
 		JdClient client = null;
@@ -215,15 +215,15 @@ public class JDSendDeliveryInfoJob implements Job {
 				continue;
 			}
 			ret = response.getResultInfo();
-			if (!"100".equals(ret.getCode())) {
-				log.info("---提交京东快递运单信息失败【" + ret.getMessage() + "】，商家编码为【"+customerCode+"】，运单号为【"
+			if (!"100".equals(ret.getCode()) && !"118".equals(ret.getCode())) { //118为 运单号已使用，也认为是 成功的
+				log.info("---提交京东快递运单信息失败【"+ret.getCode()+"】【" + ret.getMessage() + "】，商家编码为【"+customerCode+"】，运单号为【"
 						+ deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【" + orderId + "】---"
 						+ CommonUtil.curDate());
 				continue;
 			}
 			log.info("---提交京东快递运单信息成功，商家编码为【"+customerCode+"】，运单号为【" + deliveryId + "】，京东订单号为【" + thrOrderId + "】，SO订单号为【"
 					+ orderId + "】---" + CommonUtil.curDate());
-			int retCount=WmsServ.updateDeliveryPushtime(EXPRESS_ID,ret.getDeliveryId());
+			int retCount=WmsServ.updateDeliveryPushtime(EXPRESS_ID,deliveryId);
 			if (retCount != 1) {
 				log.error("---数据库运行错误【modifyDeliveryPushtime】---"
 						+ CommonUtil.curDate());

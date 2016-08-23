@@ -41,7 +41,7 @@ public class JDGetDeliveryNumJob implements Job {
 					+ CommonUtil.curDate());
 			return;
 		}
-		String SERVER_URL = "http://gw.api.jd.com/routerjson";
+		String SERVER_URL = "http://api.jd.com/routerjson";
 		String expressId = "JD";
 		String appKey = String.valueOf(authMap.get("appKey"));
 		String appSecret = String.valueOf(authMap.get("appSecret"));

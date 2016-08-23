@@ -7,6 +7,8 @@ import static org.quartz.DateBuilder.futureDate;
 
 import java.util.Date;
 
+import javax.xml.ws.handler.LogicalHandler;
+
 import org.quartz.DateBuilder.IntervalUnit;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -30,6 +32,9 @@ public class SchedMain {
 	private static final String JOB5_INTERVAL = "ZTOGetMarkBySingleJobInterval";
 	private static final String JOB6_INTERVAL = "JDGetOrderInfoJobInterval";
 	private static final String JOB7_INTERVAL = "ZTOGetDeliveryNumJobInterval";
+	private static final String JOB8_INTERVAL = "JDUpdatePackageJobInterval";
+	private static final String JOB9_INTERVAL = "DBSyncSieveOrderJobInterval";
+	private static final String JOB10_INTERVAL = "DBEwaybillSaveOrderJobInterval";
 	private static final String JOB1_ACTIVREFLAG = "JDOAuthRefreshTokenJobActiveflag";
 	private static final String JOB2_ACTIVREFLAG = "JDGetDeliveryNumJobActiveflag";
 	private static final String JOB3_ACTIVREFLAG = "JDSendDeliveryInfoJobActiveflag";
@@ -37,6 +42,9 @@ public class SchedMain {
 	private static final String JOB5_ACTIVREFLAG = "ZTOGetMarkBySingleJobActiveflag";
 	private static final String JOB6_ACTIVREFLAG = "JDGetOrderInfoJobActiveflag";
 	private static final String JOB7_ACTIVREFLAG = "ZTOGetDeliveryNumJobActiveflag";
+	private static final String JOB8_ACTIVREFLAG = "JDUpdatePackageJobActiveflag";
+	private static final String JOB9_ACTIVREFLAG = "DBSyncSieveOrderJobActiveflag";
+	private static final String JOB10_ACTIVREFLAG = "DBEwaybillSaveOrderJobActiveflag";
 	private static final String JOB1_Delay = "JDOAuthRefreshTokenJobDelay";
 	private static final String JOB2_Delay = "JDGetDeliveryNumJobDelay";
 	private static final String JOB3_Delay = "JDSendDeliveryInfoJobDelay";
@@ -44,6 +52,9 @@ public class SchedMain {
 	private static final String JOB5_Delay = "ZTOGetMarkBySingleJobDelay";
 	private static final String JOB6_Delay = "JDGetOrderInfoJobDelay";
 	private static final String JOB7_Delay ="ZTOGetDeliveryNumJobDelay";
+	private static final String JOB8_Delay ="JDUpdatePackageJobDelay";
+	private static final String JOB9_Delay ="DBSyncSieveOrderJobDelay";
+	private static final String JOB10_Delay ="DBEwaybillSaveOrderJobDelay";
 	private static Logger log = LoggerFactory.getLogger(SchedMain.class);
 	private static Scheduler sched;
 	private static final String QCONF_PATH="/../config/qconf.properties";//路径为 WEB-INF/config/qconf.properties
@@ -56,6 +67,9 @@ public class SchedMain {
 		String jobFlag5 = CommonUtil.getConfProperty(JOB5_ACTIVREFLAG,QCONF_PATH);
 		String jobFlag6 = CommonUtil.getConfProperty(JOB6_ACTIVREFLAG,QCONF_PATH);
 		String jobFlag7 = CommonUtil.getConfProperty(JOB7_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag8 = CommonUtil.getConfProperty(JOB8_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag9 = CommonUtil.getConfProperty(JOB9_ACTIVREFLAG,QCONF_PATH);
+		String jobFlag10 = CommonUtil.getConfProperty(JOB10_ACTIVREFLAG,QCONF_PATH);
 		int jobDelay1 = Integer
 				.parseInt(CommonUtil.getConfProperty(JOB1_Delay,QCONF_PATH));
 		int jobDelay2 = Integer
@@ -70,6 +84,12 @@ public class SchedMain {
 				.parseInt(CommonUtil.getConfProperty(JOB6_Delay,QCONF_PATH));
 		int jobDelay7 = Integer
 				.parseInt(CommonUtil.getConfProperty(JOB7_Delay,QCONF_PATH));
+		int jobDelay8 = Integer
+				.parseInt(CommonUtil.getConfProperty(JOB8_Delay,QCONF_PATH));
+		int jobDelay9 = Integer
+				.parseInt(CommonUtil.getConfProperty(JOB9_Delay,QCONF_PATH));
+		int jobDelay10 = Integer
+				.parseInt(CommonUtil.getConfProperty(JOB10_Delay,QCONF_PATH));
 		int jobInterval1 = Integer.parseInt(CommonUtil
 				.getConfProperty(JOB1_INTERVAL,QCONF_PATH));
 		int jobInterval2 = Integer.parseInt(CommonUtil
@@ -84,6 +104,12 @@ public class SchedMain {
 				.getConfProperty(JOB6_INTERVAL,QCONF_PATH));
 		int jobInterval7 = Integer.parseInt(CommonUtil
 				.getConfProperty(JOB7_INTERVAL,QCONF_PATH));
+		int jobInterval8 = Integer.parseInt(CommonUtil
+				.getConfProperty(JOB8_INTERVAL,QCONF_PATH));
+		int jobInterval9 = Integer.parseInt(CommonUtil
+				.getConfProperty(JOB9_INTERVAL,QCONF_PATH));
+		int jobInterval10 = Integer.parseInt(CommonUtil
+				.getConfProperty(JOB10_INTERVAL,QCONF_PATH));
 		JobDetail job1 = null;
 		JobDetail job2 = null;
 		JobDetail job3 = null;
@@ -91,6 +117,9 @@ public class SchedMain {
 		JobDetail job5 = null;
 		JobDetail job6 = null;
 		JobDetail job7 = null;
+		JobDetail job8 = null;
+		JobDetail job9 = null;
+		JobDetail job10 = null;
 		SimpleTrigger trigger1 = null;
 		SimpleTrigger trigger2 = null;
 		SimpleTrigger trigger3 = null;
@@ -98,6 +127,9 @@ public class SchedMain {
 		SimpleTrigger trigger5 = null;
 		SimpleTrigger trigger6 = null;
 		SimpleTrigger trigger7 = null;
+		SimpleTrigger trigger8 = null;
+		SimpleTrigger trigger9 = null;
+		SimpleTrigger trigger10 = null;
 		Date dt = null;
 		int flagCount = 0;
 		// 1. refresh京东access_token
@@ -198,6 +230,48 @@ public class SchedMain {
 					.forJob("expressJob6", "group1").build();
 			flagCount++;
 		}
+		// 8. 京东快递修改包裹数
+		if ("Y".equals(jobFlag8)) {
+			job8 = newJob(JDUpdatePackageJob.class).withIdentity(
+					"expressJob7", "group1").build();
+			trigger8 = newTrigger()
+					.withIdentity("expressTrigger7", "group1")
+					.startAt(futureDate(jobDelay8, IntervalUnit.SECOND))
+					.withSchedule(
+							simpleSchedule()
+									.withIntervalInSeconds(jobInterval8)
+									.repeatForever())
+					.forJob("expressJob7", "group1").build();
+			flagCount++;
+		}
+		// 9. 德邦同步筛单接口
+		if ("Y".equals(jobFlag9)) {
+			job9 = newJob(DBSyncSieveOrderJob.class).withIdentity(
+					"expressJob8", "group1").build();
+			trigger9 = newTrigger()
+					.withIdentity("expressTrigger8", "group1")
+					.startAt(futureDate(jobDelay9, IntervalUnit.SECOND))
+					.withSchedule(
+							simpleSchedule()
+									.withIntervalInSeconds(jobInterval9)
+									.repeatForever())
+					.forJob("expressJob8", "group1").build();
+			flagCount++;
+		}
+		// 10. 德邦电子运单下单(不含筛单)
+		if ("Y".equals(jobFlag10)) {
+			job10 = newJob(DBEwaybillSaveOrderJob.class).withIdentity(
+					"expressJob9", "group1").build();
+			trigger10 = newTrigger()
+					.withIdentity("expressTrigger9", "group1")
+					.startAt(futureDate(jobDelay10, IntervalUnit.SECOND))
+					.withSchedule(
+							simpleSchedule()
+									.withIntervalInSeconds(jobInterval10)
+									.repeatForever())
+					.forJob("expressJob9", "group1").build();
+			flagCount++;
+		}
 		log.info("激活的Job数为：【" + flagCount + "】");
 		if (flagCount > 0) {
 			sched = StdSchedulerFactory.getDefaultScheduler();
@@ -234,6 +308,21 @@ public class SchedMain {
 			if ("Y".equals(jobFlag7)) {
 				dt = sched.scheduleJob(job7, trigger7);
 				log.info(job7.getKey().getName() + "开始时间为："
+						+ CommonUtil.formattedDate(dt));
+			}
+			if ("Y".equals(jobFlag8)) {
+				dt = sched.scheduleJob(job8, trigger8);
+				log.info(job8.getKey().getName() + "开始时间为："
+						+ CommonUtil.formattedDate(dt));
+			}
+			if ("Y".equals(jobFlag9)) {
+				dt = sched.scheduleJob(job9, trigger9);
+				log.info(job9.getKey().getName() + "开始时间为："
+						+ CommonUtil.formattedDate(dt));
+			}
+			if ("Y".equals(jobFlag10)) {
+				dt = sched.scheduleJob(job10, trigger10);
+				log.info(job10.getKey().getName() + "开始时间为："
 						+ CommonUtil.formattedDate(dt));
 			}
 			sched.start();

@@ -315,6 +315,34 @@ public final class WmsServ {
 		log.info("订单信息：" + retList.toString());
 		return retList;
 	}
+	
+	/**
+	 * @param expressId
+	 * @return
+	 * @description 得到多包裹信息
+	 * @author zikc
+	 * @date 2016年3月11日 下午2:22:27
+	 * @update 2016年3月11日 下午2:22:27
+	 * @version V1.0
+	 */
+	public static List<Map<String, Object>> getMultiPackageInfo(String expressId) {
+		String sql = null;
+		switch (expressId) {
+		case "JD":
+			sql = "select * FROM jd_get_split_pack";
+			break;
+		default:
+			log.error("参数不符合规范");
+			return null;
+		}
+		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql);
+		if (retList == null) {
+			log.info("多包裹信息数据库查询返回为空");
+			return null;
+		}
+		log.info("多包裹信息：" + retList.toString());
+		return retList;
+	}
 
 	/**
 	 * @param sono
@@ -338,6 +366,39 @@ public final class WmsServ {
 		// h_edi_05 结算方式
 		String sql = "update doc_order_header set h_edi_01=?,h_edi_05=? where orderno=?";
 		Object[] obj = { payment, paytype, sono };
+		int retCount = JdbcUtils.execute(sql, obj);
+		return retCount;
+	}
+	
+	public static int updateWmsSoOrderPay(String sono, String paytype) {
+		if (sono == null || "".equals(sono) || paytype == null
+				|| "".equals(paytype)) {
+			log.error("参数不能为空！");
+			return 0;
+		}
+		// h_edi_05 结算方式
+		String sql = "update doc_order_header set h_edi_05=? where orderno=?";
+		Object[] obj = { paytype, sono };
+		int retCount = JdbcUtils.execute(sql, obj);
+		return retCount;
+	}
+	
+	/**
+	 * @param sono
+	 * @return
+	 * @description 更新京东多包裹接口推送标记
+	 * @author zikc
+	 * @date 2016年3月11日 下午2:49:22
+	 * @update 2016年3月11日 下午2:49:22
+	 * @version V1.0
+	 */
+	public static int updateMultiPackagePushFlag(String sono) {
+		if (sono == null || "".equals(sono)) {
+			log.error("参数不能为空！");
+			return 0;
+		}
+		String sql = "update doc_order_header set UserDefine6='Y' where orderno=?";
+		Object[] obj = {sono };
 		int retCount = JdbcUtils.execute(sql, obj);
 		return retCount;
 	}
@@ -406,5 +467,66 @@ public final class WmsServ {
 		}
 		log.info("中通收货信息为：" + retList.toString());
 		return retList;
+	}
+	
+	/**
+	 * @return
+	 * @description 得到德邦需要同步筛单的订单信息
+	 * @author zikc
+	 * @date 2016年8月6日 上午10:46:56
+	 * @update 2016年8月6日 上午10:46:56
+	 * @version V1.0
+	 */
+	public static List<Map<String, Object>> getDbSynSieveOrder() {
+		String sql = "select * from db_sync_sieve_order";
+		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql);
+		if (retList == null) {
+			log.info("【德邦需要同步筛单的订单信息】数据库查询返回为空");
+			return null;
+		}
+		log.info("【德邦需要同步筛单的订单信息】为：" + retList.toString());
+		return retList;
+	}
+	
+	/**
+	 * @return
+	 * @description 得到德邦电子运单下单(不含筛单)的订单信息
+	 * @author zikc
+	 * @date 2016年8月9日 下午1:16:05
+	 * @update 2016年8月9日 下午1:16:05
+	 * @version V1.0
+	 */
+	public static List<Map<String, Object>> getDbEwaybillSaveOrder() {
+		String sql = "select * from db_ewaybill_save_order";
+		List<Map<String, Object>> retList = JdbcUtils.queryPlural(sql);
+		if (retList == null) {
+			log.info("【德邦电子运单下单(不含筛单)】数据库查询返回为空");
+			return null;
+		}
+		log.info("【德邦电子运单下单(不含筛单)】为：" + retList.toString());
+		return retList;
+	}
+	
+	/**
+	 * @param sieveFLag
+	 * @param reason
+	 * @param soNo
+	 * @return
+	 * @description 更新德邦的筛单标记
+	 * @author zikc
+	 * @date 2016年8月8日 下午5:52:22
+	 * @update 2016年8月8日 下午5:52:22
+	 * @version V1.0
+	 */
+	public static int updateDBSieveFlag(String sieveFLag, String reason,String soNo) {
+		if (sieveFLag == null || "".equals(sieveFLag) || reason == null
+				|| "".equals(reason)|| soNo==null || "".equals(soNo)) {
+			log.error("参数不能为空！");
+			return 0;
+		}
+		String sql = "update doc_order_header set carrieraddress1=?,carrieraddress2=? where orderno=?";
+		Object[] obj = { sieveFLag, reason,soNo };
+		int retCount = JdbcUtils.execute(sql, obj);
+		return retCount;
 	}
 }
